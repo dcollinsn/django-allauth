@@ -16,7 +16,7 @@ from allauth.exceptions import ImmediateHttpResponse
 
 from . import app_settings, signals
 from .adapter import get_adapter
-from .models import SocialLogin
+from .models import SocialLogin, SocialApp, SocialToken
 from .providers.base import AuthError, AuthProcess
 
 
@@ -126,6 +126,12 @@ def _add_social_account(request, sociallogin):
         signals.social_account_added.send(
             sender=SocialLogin, request=request, sociallogin=sociallogin
         )
+    app = SocialApp.objects.filter(name="Discord")
+    if len(app) == 1:
+        sociallogin.token.app = app[0]
+        SocialToken.objects.filter(app=app[0], account=sociallogin.account).delete()
+    sociallogin.token.account = sociallogin.account
+    sociallogin.token.save()
     default_next = get_adapter(request).get_connect_redirect_url(
         request, sociallogin.account
     )
