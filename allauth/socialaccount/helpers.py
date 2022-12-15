@@ -104,14 +104,14 @@ def _add_social_account(request, sociallogin):
     message = "socialaccount/messages/account_connected.txt"
     action = None
 
-    app = SocialApp.objects.filter(name="Discord")
-    if len(app) == 1:
-        sociallogin.token.app = app[0]
-        SocialToken.objects.filter(app=app[0], account=sociallogin.account).delete()
-    sociallogin.token.account = sociallogin.account
-    sociallogin.token.save()
-
     if sociallogin.is_existing:
+        app = SocialApp.objects.filter(name="Discord")
+        if len(app) == 1:
+            sociallogin.token.app = app[0]
+            SocialToken.objects.filter(app=app[0], account=sociallogin.account).delete()
+        sociallogin.token.account = sociallogin.account
+        sociallogin.token.save()
+
         if sociallogin.user != request.user:
             # Social account of other user. For now, this scenario
             # is not supported. Issue is that one cannot simply
@@ -131,6 +131,14 @@ def _add_social_account(request, sociallogin):
         # New account, let's connect
         action = "added"
         sociallogin.connect(request, request.user)
+
+        app = SocialApp.objects.filter(name="Discord")
+        if len(app) == 1:
+            sociallogin.token.app = app[0]
+            SocialToken.objects.filter(app=app[0], account=sociallogin.account).delete()
+        sociallogin.token.account = sociallogin.account
+        sociallogin.token.save()
+
         signals.social_account_added.send(
             sender=SocialLogin, request=request, sociallogin=sociallogin
         )
