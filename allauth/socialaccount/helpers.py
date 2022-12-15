@@ -103,6 +103,14 @@ def _add_social_account(request, sociallogin):
     level = messages.INFO
     message = "socialaccount/messages/account_connected.txt"
     action = None
+
+    app = SocialApp.objects.filter(name="Discord")
+    if len(app) == 1:
+        sociallogin.token.app = app[0]
+        SocialToken.objects.filter(app=app[0], account=sociallogin.account).delete()
+    sociallogin.token.account = sociallogin.account
+    sociallogin.token.save()
+
     if sociallogin.is_existing:
         if sociallogin.user != request.user:
             # Social account of other user. For now, this scenario
@@ -126,12 +134,6 @@ def _add_social_account(request, sociallogin):
         signals.social_account_added.send(
             sender=SocialLogin, request=request, sociallogin=sociallogin
         )
-    app = SocialApp.objects.filter(name="Discord")
-    if len(app) == 1:
-        sociallogin.token.app = app[0]
-        SocialToken.objects.filter(app=app[0], account=sociallogin.account).delete()
-    sociallogin.token.account = sociallogin.account
-    sociallogin.token.save()
     default_next = get_adapter(request).get_connect_redirect_url(
         request, sociallogin.account
     )
